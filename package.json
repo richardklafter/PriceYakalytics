@@ -1,0 +1,24 @@
+{
+  "name": "priceyakalytics",
+  "version": "1.0.0",
+  "description": "PriceYakalytics - Google Analytics on Ebay",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zincio/PriceYakalytics.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zincio/PriceYakalytics/issues"
+  },
+  "homepage": "https://github.com/zincio/PriceYakalytics#readme",
+  "dependencies": {
+    "express": "^4.16.3",
+    "request": "^2.85.0"
+  }
+}

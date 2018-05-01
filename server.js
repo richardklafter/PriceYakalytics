@@ -13,8 +13,8 @@ const express = require('express')
 const request = require('request')
 const app = express()
 
-const ZINC_CLIENT_ID = "YOUR ZINC CLIENT ID"
-const ZINC_CLIENT_SECRET = "YOUR ZINC CLIENT SECRET" //Super secret treat it like a password
+const ZINC_CLIENT_ID = process.env['ZINC_CLIENT_ID'] //Your zinc client id. We pass it in as an env var so we can open source this application
+const ZINC_CLIENT_SECRET = process.env['ZINC_CLIENT_SECRET'] //Your zinc client secret. Super secret treat it like a password
 
 app.get('/', (req, res) => {
     //We send the user to Zinc's or PriceYaks's login page requesting specific scopes/permissions. If the user accepts they will be redirected to a url we supply
