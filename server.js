@@ -23,6 +23,7 @@ app.engine('handlebars', expressHandlebars())
 app.set('view engine', 'handlebars')
 app.set('views', './views')
 app.use(cookieParser())
+app.use(express.static('static'))
 
 app.get('/', (req, res) => {
     if(!req.signedCookies.login){
@@ -39,13 +40,34 @@ app.get('/login', (req, res) => {
     res.render('login', { loginUrl:loginUrl })
 })
 
+
+
 app.get('/oauth', (req, response) => {
     //If the user accepts the scopes/permissions you will be sent to your specified redirect_uri with a `code` query param
     var code = url.parse(req.url, true).query.code
     if(!code){
-        response.send("Login failed")
+        response.redirect(`/login?error=${url.parse(req.url, true).error}`)
         return
     }
+    //We can use the code query param to get a long lived token which can be used call Zinc's API in the future
+    var redirect_uri = `${req.protocol}://${req.get('host')}/oauth`
+    var res = request('https://login.zinc.io/oidc/token', {
+        method: "POST",
+        json: {
+            code:code,
+            client_id:ZINC_CLIENT_ID,
+            client_secret:ZINC_CLIENT_SECRET,
+            grant_type:'authorization_code',
+            redirect_uri:redirect_uri,
+        }
+    }).then((body)=>{
+        var token = body.access_token
+        response.cookie('login', token, { expires:new Date(Date.now()+60*60*1000), httpOnly:true, secure:true, signed:true});
+        response.redirect('/')
+        response.end()
+    })
+
+
     //We can use the code query param to get a long lived token which can be used call Zinc's API in the future
     var redirect_uri = `${req.protocol}://${req.get('host')}/oauth`
     request('https://login.zinc.io/oidc/token', {
