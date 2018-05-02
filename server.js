@@ -66,7 +66,7 @@ async function updateListingTemplate(user, store, gaId){
     var listing_template = store.listing_template.replace(GAID_REGEX, '')
     //add the old tag if gaId is supplied
     if(gaId){
-        var imgTag = `<img src="https://ga-beacon.appspot.com/${gaId}/${store.destination}/${store.destination_sellername}/{{itemid}}.gif">`
+        var imgTag = `<img src="https://ga-beacon.appspot.com/${gaId}/${store.destination}/${store.destination_sellername}/{{listing_id}}.gif">`
         listing_template += "\n"+imgTag
     }
     await callPriceYak(user, `/account/${store.id}/requests/template`, {method:"POST", json:{listing_template: listing_template}})
