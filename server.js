@@ -10,24 +10,32 @@
 
 const url = require('url');
 const express = require('express')
-const request = require('request')
-const app = express()
+const request = require('request-promise-native')
+const cookieParser = require('cookie-parser')
 
-const ZINC_CLIENT_ID = "YOUR ZINC CLIENT ID"
-const ZINC_CLIENT_SECRET = "YOUR ZINC CLIENT SECRET" //Super secret treat it like a password
+const ZINC_CLIENT_ID = process.env['ZINC_CLIENT_ID'] //Your zinc client id. We pass it in as an env var so we can open source this application
+const ZINC_CLIENT_SECRET = process.env['ZINC_CLIENT_SECRET'] //Your zinc client secret. Super secret treat it like a password
+const COOKIE_SECRET = process.env['COOKIE_SECRET'] || ZINC_CLIENT_SECRET //Used to sign cookies so we know they came from us
+
+const app = express(COOKIE_SECRET)
+app.use(cookieParser())
 
 app.get('/', (req, res) => {
-    //We send the user to Zinc's or PriceYaks's login page requesting specific scopes/permissions. If the user accepts they will be redirected to a url we supply
-    var redirect_uri = `${req.protocol}://${req.get('host')}/login`
-    res.send(`
-        <html><body>
-        <a href="https://login.priceyak.com/oidc/auth?response_type=code&scope=openid&client_id=${ZINC_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect_uri)}">Login with PriceYak</a><br>
-        <a href="https://login.zinc.io/oidc/auth?response_type=code&scope=openid&client_id=${ZINC_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect_uri)}">Login with Zinc</a><br>
-        </body></html>
-    `)
+    if(!req.signedCookies.login){
+        res.redirect('/login')
+        return
+    }
+    //XXX: We are already logged in. Render the default page
 })
 
-app.get('/login', (req, response) => {
+app.get('/login', (req, res) => {
+    var redirectUrl = `${req.protocol}://${req.get('host')}/oauth` //The url we end up at after oauth
+    var scopes = ['openid', 'priceyak:listing_template', 'priceyak:stores'] //These are the list of scopes PriceYakalytics needs to get the users stores and modify their templates
+    var loginUrl = `https://login.priceyak.com/oidc/auth?response_type=code&scope=${scopes.join(',')}&client_id=${ZINC_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect_uri)}`
+    //XXX: Render the "Login with PY page"
+})
+
+app.get('/oauth', (req, response) => {
     //If the user accepts the scopes/permissions you will be sent to your specified redirect_uri with a `code` query param
     var code = url.parse(req.url, true).query.code
     if(!code){
