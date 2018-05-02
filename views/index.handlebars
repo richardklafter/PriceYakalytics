@@ -35,7 +35,7 @@
             border-width: 2px;
             border-radius: 15px;
             background-color: rgba(0, 132, 255, 0.1);
-            height: 450px;
+            height: 100%;
         }
         .content{
             margin-top: 50px;
@@ -47,55 +47,100 @@
         .row{
             margin-top: 20px;
         }
+        ol{
+          padding-left: 15px;
+        }
+        .text-danger{
+          margin: 0px;
+        }
+        select{
+          display: inline-block;
+        }
+        video{
+          width:600px;
+        }
+        .video-container{
+          display:none;
+        }
     </style>
   </head>
   <body>
     <div class="container">
-    <div class="content">
-    <div class="row">
-        <div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3">
-          <img class="logo" src="/static/PriceYakalytics.png">
-        </div>
-    </div>
-    <div class="row text-danger">
-      <div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3"></div>
-        {{error}}
+      <div class="content">
+      <div class="row">
+          <div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3">
+            <img class="logo" src="PriceYakalytics.png">
+            <p>Logged into PriceYak as {{ user.email }}</p>
+          </div>
       </div>
-    </div>
-  	<div class="row">
-  		<div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3">
-  			<ol>
-  				<li>
-  					 Make a <a target="_blank" href="https://analytics.google.com">Google Analytics</a> account
-  				</li>
-  				<li>
-  					Create an Account and Account Property on Google Analytics
-  				</li>
-  				<li>
-            Copy your Google Analytics account tracking code (it looks like UA-xxxxxxxx-xx) and paste it below.
-            <form class="input-group" action="/" method="post">
-                <span class="input-group-addon">Google Analytics ID</span>
-                <input type="text" class="form-control" id="analytics-id" placeholder="UA-xxxxxxxx-xx" value="{{gaId}}" name="gaId">
-                <span class="input-group-btn">
-                <input class="btn btn-default copy-button copier" type="submit">Save</input>
-              </span>
-            </form>
-          </li>
-          <li>
-             Click Save and your PriceYak template will be updated.
-          </li>
-          <li>
-            Then, head into PriceYak and refresh your listings!
-          </li>
-          <li>
-            For more information, check out this <a href="https://community.ebay.com/t5/Tools-Apps/How-to-Track-eBay-Listing-with-Google-Analytics-Beginers-Guide/td-p/27194223" target="_blank">blog post.</a>
-          </li>
-  			</ol>
-  		</div>
-    </div>
-  </div>
-  </div>
-
-
+      <div class="row text-danger">
+        <div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3">
+          {{error}}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3">
+          <ol>
+            <li>
+              Make a <a target="_blank" href="https://analytics.google.com">Google Analytics</a> account
+            </li>
+            <li>
+              Create an Account and Account Property on Google Analytics
+            </li>
+            <li>
+              Select a store to add Google Analytics to. Only eBay and WooCommerce stores are supported: 
+              <select class="form-control">
+                {{#each stores}}
+                  {{#eq this.destination "ebay"}}
+                      <option value="{{this.id}}">{{this.destination}}: {{this.destination_sellername}}</option>
+                  {{/eq}}
+                  {{#eq this.destination "woocommerce"}}
+                      <option value="{{this.id}}">{{this.destination}}: {{this.destination_sellername}}</option>
+                  {{/eq}}
+                {{/each}}
+                  <option value="*">All of the stores!</option>
+              </select>
+            </li>
+            <li>
+              Copy your Google Analytics account tracking code (it looks like UA-xxxxxxxx-xx) and paste it below.
+              <form class="input-group">
+                  <span class="input-group-addon">Google Analytics ID</span>
+                  <input type="text" class="form-control" id="analytics-id" placeholder="UA-xxxxxxxx-xx" value="{{gaId}}">
+                  <span class="input-group-btn">
+                  <input class="btn btn-default" id="update-template" type="submit">Save</input>
+                </span>
+              </form>
+            </li>
+            <li>
+              Click Save and your PriceYak template will be updated.
+            </li>
+            <li>
+              Then, head into PriceYak and refresh your listings!
+            </li>
+            <li>
+              For more information, check out this <a href="https://community.ebay.com/t5/Tools-Apps/How-to-Track-eBay-Listing-with-Google-Analytics-Beginers-Guide/td-p/27194223" target="_blank">blog post.</a>
+            </li>
+          </ol>
+         </div>  {{!-- /*col*/ --}}
+        </div> {{!-- /*row*/ --}}
+        <div class="row video-container">
+            <div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3">
+                <video loop="true" muted="true" autoplay="true" src="refreshtemplate.mp4"></video>
+            </div>
+          </div>
+      </div> {{!-- /*content*/ --}}
+    </div> {{!-- /*container*/ --}}
   </body>
+  <script type="text/javascript">
+  $(function(){
+    $("#update-template").click(function(ev,target){
+      ev.preventDefault()
+      var stores = $("select option:selected").val()
+      var gaId = $("#analytics-id").val()
+      var data = { "stores" : stores, "gaId" : gaId }
+      console.log(data)
+      $.post("/", data,() => $(".video-container").show());
+    }) 
+  });
+  </script>
 </html>

@@ -14,13 +14,18 @@ const request = require('request-promise-native')
 const cookieParser = require('cookie-parser')
 const expressHandlebars  = require('express-handlebars');
 const bodyParser = require('body-parser');
+const helpers = require('handlebars-helpers')
 
 const ZINC_CLIENT_ID = process.env['ZINC_CLIENT_ID'] //Your zinc client id. We pass it in as an env var so we can open source this application
 const ZINC_CLIENT_SECRET = process.env['ZINC_CLIENT_SECRET'] //Your zinc client secret. Super secret treat it like a password
 const COOKIE_SECRET = process.env['COOKIE_SECRET'] || ZINC_CLIENT_SECRET //Used to sign cookies so we know they came from us
 
 const app = express()
-app.engine('handlebars', expressHandlebars())
+const hbs = expressHandlebars.create({
+    helpers: helpers.comparison()
+})
+
+app.engine('handlebars', hbs.engine)
 app.set('view engine', 'handlebars')
 app.set('views', './views')
 app.use(cookieParser(COOKIE_SECRET))
@@ -81,27 +86,40 @@ app.get('/', async function(req, res){
     console.log('stores', stores)
     gaId = (stores.find(store=>store.gaId)||{}).gaId
     //Render our default page
-    res.render('index', { gaId:gaId })
+    res.render('index', { gaId:gaId, user:user, stores:stores })
 })
 
 app.post('/', async function(req, res){
     //If the user is not logged in redirect them to login
     var user = getLoggedInUser(req)
+    console.log(req.body)
     if(!user){
         res.redirect('/login')
         res.end()
         return
     }
     var gaId = req.body.gaId;
+    var storeToUpdate = req.body.stores;
     var stores = await getStoresAndTemplates(user)
     if(!stores.length){
-        res.render('index', { gaId:gaId, error:"You don't appear to have any PriceYak stores"})
+        res.render('index', { user:user, stores:stores, gaId:gaId, error:"You don't appear to have any PriceYak stores"})
         return
     }
-    for (let store of stores) {
-        console.log("before", JSON.stringify(store))
-        updateListingTemplate(user, store, gaId)
-        console.log("after", JSON.stringify(store))
+    if (storeToUpdate === "*") {
+        console.log("updating all stores");
+        for (let store of stores) {
+            console.log("before", JSON.stringify(store))
+            updateListingTemplate(user, store, gaId)
+            console.log("after", JSON.stringify(store))
+        }
+    } else {
+        for (let store of stores) {
+            if (store.id === storeToUpdate){
+                console.log("before", JSON.stringify(store))
+                updateListingTemplate(user, store, gaId)
+                console.log("after", JSON.stringify(store))
+            }
+        }
     }
     res.redirect('/')
 })
