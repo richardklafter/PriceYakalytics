@@ -41,6 +41,9 @@ app.get('/login', (req, res) => {
 })
 
 
+app.get('/home', (req, res) => {
+    res.render('index')
+})
 
 app.get('/oauth', (req, response) => {
     //If the user accepts the scopes/permissions you will be sent to your specified redirect_uri with a `code` query param
