@@ -41,37 +41,36 @@ async function callPriceYak(user, route, options) {
     return await request(route, options)
 }
 
+const GAID_REGEX = new RegExp(`<img[^"]*?"https://ga-beacon.appspot.com/([^/]+)[^>]*?>`, 'i')
 async function getStoresAndTemplates(user){
     var stores = (await callPriceYak(user, `/user/${user.sub}/stores`)).stores
     return (await Promise.all(stores.map(async function(store){
         try{
-            var template = await callPriceYak(user, `/account/${store.id}/requests/template`)
-            Object.assign(store, template)
+            var tmpl = await callPriceYak(user, `/account/${store.id}/requests/template`)
+            Object.assign(store, tmpl)
+            store.gaId = store.listing_template && GAID_REGEX.exec(store.listing_template)
+            store.gaId = store.gaId && store.gaId[1]
         } catch(err) {}
         return store
     })))
 }
 
-async function getListingTemplates(user, stores){
-    return (await Promise.all(stores.map(async function(store){
-        try{
-            var ret = await callPriceYak(user, `/account/${store.id}/requests/template`)
-
-            ret.store = store
-        } catch(err) {
-            return null
-        }
-    }))).filter(i=>i)
-}
-
 async function updateListingTemplate(user, store, gaId){
-    if(!store.template) return
-    var gaUrl = `https://ga-beacon.appspot.com/${gaId}/${ebay}/${store.destination_sellername}/{{itemid}}.gif`
+    if(!store.listing_template) return
+    //strip the old tag
+    var listing_template = store.listing_template.replace(GAID_REGEX, '')
+    //add the old tag if gaId is supplied
+    if(gaId){
+        var imgTag = `<img src="https://ga-beacon.appspot.com/${gaId}/${store.destination}/${store.destination_sellername}/{{itemid}}.gif">`
+        listing_template += "\n"+imgTag
+    }
+    await callPriceYak(user, `/account/${store.id}/requests/template`, {method:"POST", json:{listing_template: listing_template}})
+    return store
 }
 
 app.get('/', async function(req, res){
-    var user = getLoggedInUser(req)
     //If the user is not logged in redirect them to login
+    var user = getLoggedInUser(req)
     if(!user){
         res.redirect('/login')
         res.end()
@@ -79,26 +78,32 @@ app.get('/', async function(req, res){
     }
     //If the user is logged in get their current GA id if they have one
     var stores = await getStoresAndTemplates(user)
-    console.log(stores)
-    if(stores){
-        console.log(await getListingTemplates(user, stores))
-        gaId = 'GA-EXAMPLE' //XXX: regex to parse tempalte
-    }
+    console.log('stores', stores)
+    gaId = (stores.find(store=>store.gaId)||{}).gaId
     //Render our default page
     res.render('index', { gaId:gaId })
 })
 
-app.post('/save', async function(req, res){
+app.post('/', async function(req, res){
+    //If the user is not logged in redirect them to login
+    var user = getLoggedInUser(req)
+    if(!user){
+        res.redirect('/login')
+        res.end()
+        return
+    }
     var gaId = req.body.gaId;
-    var stores = await callPriceYak(user, `/user/${user.sub}/stores`)
+    var stores = await getStoresAndTemplates(user)
     if(!stores.length){
         res.render('index', { gaId:gaId, error:"You don't appear to have any PriceYak stores"})
         return
     }
-    await Promise.all(stores.map(async function(store){
-        var template = await callPriceYak(user, `/account/${store.id}/requests/template`)
-        console.log(template)
-    }))
+    for (let store of stores) {
+        console.log("before", JSON.stringify(store))
+        updateListingTemplate(user, store, gaId)
+        console.log("after", JSON.stringify(store))
+    }
+    res.redirect('/')
 })
 
 app.get('/logout', (req, res) => {

@@ -57,6 +57,9 @@
           <img class="logo" src="/static/PriceYakalytics.png">
         </div>
     </div>
+    <div class="row text-danger">
+      {{error}}
+    </div>
   	<div class="row">
   		<div class="col-lg-6 col-lg-offset-3 col-md-6 col-md-offset-3">
   			<ol>
@@ -68,13 +71,13 @@
   				</li>
   				<li>
             Copy your Google Analytics account tracking code (it looks like UA-xxxxxxxx-xx) and paste it below.
-            <div class="input-group">
+            <form class="input-group" action="/" method="post">
                 <span class="input-group-addon">Google Analytics ID</span>
-                <input type="text" class="form-control" id="analytics-id" placeholder="UA-xxxxxxxx-xx" value="{{gaId}}">
+                <input type="text" class="form-control" id="analytics-id" placeholder="UA-xxxxxxxx-xx" value="{{gaId}}" name="gaId">
                 <span class="input-group-btn">
-                <button class="btn btn-default copy-button copier" type="button">Save</button>
+                <input class="btn btn-default copy-button copier" type="submit">Save</input>
               </span>
-            </div>
+            </form>
           </li>
           <li>
              Click Save and your PriceYak template will be updated.
